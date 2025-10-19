@@ -1,167 +1,139 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Teacher's Check In and Check Out Record</title>
   <style>
-    :root{--bg:#0f172a;--card:#0b1220;--muted:#94a3b8;--accent:#7c3aed}
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#071124 0%, #071b2b 60%);color:#e6eef8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
-    .wrap{width:100%;max-width:960px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    .meta{color:var(--muted);font-size:13px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));border-radius:12px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.6);}
-    .controls{display:flex;gap:8px;margin-bottom:12px}
-    button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;color:inherit;cursor:pointer;font-weight:600}
-    button:hover{transform:translateY(-2px)}
-    .grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:8px}
-    .row{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));}
-    .name{font-weight:700}
-    .times{color:var(--muted)}
-    .empty{color:var(--muted);padding:24px;text-align:center}
-    .footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:right}
-    .loader{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,0.06);border-top-color:var(--accent);animation:spin 1s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .notice{background:linear-gradient(90deg, rgba(124,58,237,0.12), rgba(124,58,237,0.02));padding:8px;border-radius:8px;color:#dbeafe;margin-bottom:10px}
-    .small{font-size:13px;color:var(--muted)}
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #222;
+      animation: fadeIn 1.5s ease;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    h1 {
+      background: rgba(255,255,255,0.8);
+      padding: 15px 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-size: 1.5em;
+      text-align: center;
+    }
+    #output {
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 600px;
+      font-size: 1.1em;
+      animation: fadeInUp 1.2s ease;
+    }
+    @keyframes fadeInUp {
+      from {opacity: 0; transform: translateY(30px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    .teacher {
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    .teacher:last-child {
+      border-bottom: none;
+    }
+    .time {
+      color: #0077cc;
+      font-weight: bold;
+    }
+    footer {
+      margin-top: 25px;
+      color: #fff;
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1 id="page-title">Teacher's Check In and Check Out Record</h1>
-        <div class="meta" id="subtitle">Loading…</div>
-      </div>
-      <div class="meta small">Source: Published Google Sheet</div>
-    </header>
+  <h1 id="title">Teacher's Check In and Check Out Record</h1>
+  <div id="output">Loading data...</div>
+  <footer>Updated automatically from Google Sheets</footer>
 
-    <div class="card">
-      <div class="notice">This page reads the <strong>published</strong> Google Sheet CSV and shows entries for <strong>today</strong>. It ignores the header row and starts processing from row 2.</div>
-      <div class="controls">
-        <button id="refresh">Refresh</button>
-        <button id="download">Download CSV</button>
-        <div style="flex:1"></div>
-        <div id="status" style="display:flex;gap:8px;align-items:center"></div>
-      </div>
+  <script>
+    const sheetURL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgjGiwz_YAGf5XkE77TTP5BydKRO_Dp1I95wRFkUGS4M36kX1hpQWotXy5NHi7yg5HkWDpUDufZK2p/pub?output=csv"
+    );
 
-      <div id="list" class="grid"></div>
-      <div id="empty" class="empty">Waiting for data…</div>
-      <div class="footer">Tip: update the published sheet and press Refresh to reload.</div>
-    </div>
-  </div>
+    const outputDiv = document.getElementById("output");
+    const title = document.getElementById("title");
 
-<script>
-// === CONFIG ===
-const SHEET_CSV = 'https://cors.isomorphic-git.org/https://docs.google.com/spreadsheets/d/e/2PACX-1vRgjGiwz_YAGf5XkE77TTP5BydKRO_Dp1I95wRFkUGS4M36kX1hpQWotXy5NHi7yg5HkWDpUDufZK2p/pub?output=csv';
-// Column A = date/time, Column B = teacher name. Start from row 2 (ignore header row)
-
-const qs = s => document.querySelector(s);
-const listEl = qs('#list');
-const emptyEl = qs('#empty');
-const statusEl = qs('#status');
-const subtitle = qs('#subtitle');
-const titleEl = qs('#page-title');
-
-function setStatus(text, busy=false){statusEl.innerHTML = text ? '<div>'+text+'</div>' : ''; if(busy) statusEl.appendChild(Object.assign(document.createElement('div'),{className:'loader'}));}
-
-function formatDateTitle(date){const opts={year:'numeric',month:'short',day:'numeric'};return date.toLocaleDateString(undefined,opts)}
-function formatTime(date){const opts={hour:'2-digit',minute:'2-digit'};return date.toLocaleTimeString(undefined,opts)}
-
-function parseDateFromString(s){ if(!s) return null; s = s.trim();
-  let d = new Date(s);
-  if(!isNaN(d)) return d;
-  const m1 = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
-  if(m1){ let month=Number(m1[1]), day=Number(m1[2]), year=Number(m1[3]); if(year<100) year += 2000; const hr = Number(m1[4]||0), min=Number(m1[5]||0), sec=Number(m1[6]||0); return new Date(year, month-1, day, hr, min, sec); }
-  const m2 = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-  if(m2){ let day=Number(m2[1]), month=Number(m2[2]), year=Number(m2[3]); if(year<100) year += 2000; const hr = Number(m2[4]||0), min=Number(m2[5]||0), sec=Number(m2[6]||0); return new Date(year, month-1, day, hr, min, sec); }
-  return null;
-}
-
-function csvToRows(csv){
-  const rows = [];
-  let cur = [], field = '', inQuotes = false;
-  for(let i=0;i<csv.length;i++){
-    const ch = csv[i];
-    const next = csv[i+1];
-    if(inQuotes){
-      if(ch === '"' && next === '"'){ field += '"'; i++; }
-      else if(ch === '"'){ inQuotes = false; }
-      else field += ch;
-    } else {
-      if(ch === '"'){ inQuotes = true; }
-      else if(ch === ','){ cur.push(field); field=''; }
-      else if(ch === '\r'){ continue; }
-      else if(ch === '\n'){ cur.push(field); field=''; rows.push(cur); cur=[]; }
-      else field += ch;
-    }
-  }
-  if(field !== '' || cur.length) cur.push(field);
-  if(cur.length) rows.push(cur);
-  return rows;
-}
-
-async function loadAndShow(){
-  try{
-    setStatus('Fetching sheet…', true);
-    const resp = await fetch(SHEET_CSV, {cache:'no-cache'});
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const txt = await resp.text();
-    setStatus('Parsing CSV…', true);
-    const rows = csvToRows(txt);
-    if(rows.length && rows[0].length && rows[0][0].charCodeAt(0)===0xFEFF) rows[0][0] = rows[0][0].slice(1);
-
-    const today = new Date();
-    const todayYMD = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
-    titleEl.textContent = `Teacher's Check In and Check Out Record [${formatDateTitle(today)}]`;
-    subtitle.textContent = `Showing entries for ${formatDateTitle(today)} (local)`;
-
-    const map = new Map();
-    for(let i=1;i<rows.length;i++){
-      const r = rows[i];
-      if(!r) continue;
-      const rawDate = (r[0]||'').trim();
-      const name = (r[1]||'').trim();
-      if(!rawDate || !name) continue;
-      const d = parseDateFromString(rawDate);
-      if(!d) continue;
-      if(d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate()){
-        const t = formatTime(d);
-        if(!map.has(name)) map.set(name, []);
-        map.get(name).push({time:t, raw:rawDate});
-      }
+    function formatTime(dateString) {
+      const date = new Date(dateString);
+      if (isNaN(date)) return dateString;
+      let hours = date.getHours();
+      let minutes = date.getMinutes().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      return `${hours}:${minutes} ${ampm}`;
     }
 
-    listEl.innerHTML='';
-    if(map.size===0){ emptyEl.style.display='block'; setStatus('No records found for today'); return; }
-    emptyEl.style.display='none';
-    const names = Array.from(map.keys()).sort((a,b)=>a.localeCompare(b));
-    for(const name of names){
-      const times = map.get(name).map(x=>x.time);
-      const uniq = Array.from(new Set(times)).sort();
-      const row = document.createElement('div'); row.className='row';
-      const left = document.createElement('div'); left.innerHTML = `<div class="name">${escapeHtml(name)}</div><div class="small">Entries: ${uniq.length}</div>`;
-      const right = document.createElement('div'); right.innerHTML = `<div class="times">${escapeHtml(uniq.join(', '))}</div>`;
-      row.appendChild(left); row.appendChild(right);
-      listEl.appendChild(row);
+    function sameDay(date1, date2) {
+      return (
+        date1.getFullYear() === date2.getFullYear() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate()
+      );
     }
-    setStatus(`Loaded ${rows.length-1} rows, ${map.size} teachers found`);
-  }catch(err){
-    emptyEl.style.display='block';
-    listEl.innerHTML='';
-    setStatus('Error: '+err.message);
-    console.error(err);
-  }
-}
 
-function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    fetch(sheetURL)
+      .then(response => response.text())
+      .then(csvText => {
+        const rows = csvText.split(/\r?\n/).slice(1); // skip header
+        const today = new Date();
+        const teacherMap = {};
 
-qs('#refresh').addEventListener('click', ()=>{ loadAndShow(); });
-qs('#download').addEventListener('click', ()=>{ window.open(SHEET_CSV, '_blank'); });
+        rows.forEach(row => {
+          const cols = row.split(",");
+          if (cols.length < 2) return;
+          const dateStr = cols[0].trim();
+          const name = cols[1].trim();
+          const dateObj = new Date(dateStr);
 
-loadAndShow();
-</script>
+          if (sameDay(dateObj, today)) {
+            if (!teacherMap[name]) teacherMap[name] = [];
+            teacherMap[name].push(formatTime(dateStr));
+          }
+        });
+
+        const dateString = today.toLocaleDateString("en-MY", {
+          day: "2-digit", month: "2-digit", year: "numeric"
+        });
+        title.textContent = `Teacher's Check In and Check Out Record [${dateString}]`;
+
+        if (Object.keys(teacherMap).length === 0) {
+          outputDiv.innerHTML = "<p>No data found for today.</p>";
+          return;
+        }
+
+        let html = "";
+        for (const [name, times] of Object.entries(teacherMap)) {
+          html += `<div class="teacher"><strong>${name}</strong> = <span class="time">${times.join(", ")}</span></div>`;
+        }
+        outputDiv.innerHTML = html;
+      })
+      .catch(err => {
+        console.error(err);
+        outputDiv.innerHTML = "<p style='color:red;'>Failed to fetch data. Please try again later.</p>";
+      });
+  </script>
 </body>
 </html>
