@@ -22,7 +22,7 @@
       to {opacity: 1; transform: translateY(0);}
     }
     h1 {
-      background: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.85);
       padding: 15px 25px;
       border-radius: 15px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -30,7 +30,7 @@
       text-align: center;
     }
     #output {
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.95);
       padding: 20px;
       margin-top: 20px;
       border-radius: 15px;
@@ -69,8 +69,9 @@
   <footer>Updated automatically from Google Sheets</footer>
 
   <script>
+    // ✅ FIXED direct CSV link using AllOrigins proxy to bypass CORS
     const sheetURL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgjGiwz_YAGf5XkE77TTP5BydKRO_Dp1I95wRFkUGS4M36kX1hpQWotXy5NHi7yg5HkWDpUDufZK2p/pub?output=csv"
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgjGiwz_YAGf5XkE77TTP5BydKRO_Dp1I95wRFkUGS4M36kX1hpQWotXy5NHi7yg5HkWDpUDufZK2p/pub?gid=0&single=true&output=csv"
     );
 
     const outputDiv = document.getElementById("output");
@@ -95,7 +96,10 @@
     }
 
     fetch(sheetURL)
-      .then(response => response.text())
+      .then(response => {
+        if (!response.ok) throw new Error("Network error");
+        return response.text();
+      })
       .then(csvText => {
         const rows = csvText.split(/\r?\n/).slice(1); // skip header
         const today = new Date();
@@ -132,7 +136,7 @@
       })
       .catch(err => {
         console.error(err);
-        outputDiv.innerHTML = "<p style='color:red;'>Failed to fetch data. Please try again later.</p>";
+        outputDiv.innerHTML = "<p style='color:red;'>Failed to fetch data. Please check your published link.</p>";
       });
   </script>
 </body>
